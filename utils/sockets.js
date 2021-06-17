@@ -10,16 +10,16 @@ const JSEncrypt = require('JSEncrypt/bin/jsencrypt');
 const CryptoJS = require("crypto-js");
 
 function startChatServer(io) {
-    const botName = 'Bot';
+    const botName = '';
 
     io.on('connection', socket => {
-
+        
         socket.on('joinstream', ({ username, stream }) => {
             const user = userJoin(socket.id, username, stream);
-
+            
             socket.join(user.stream);
 
-            socket.emit('message', formatMessage(botName, 'Welcome to test chat server!'));
+            socket.emit('message', formatMessage(botName, 'Welcome to the chat!'));
 
             socket.broadcast
             .to(user.stream)
