@@ -5,43 +5,41 @@ const {
   userLeave,
   getStreamUsers
 } = require('./users');
-global.window = {};
-const JSEncrypt = require('JSEncrypt/bin/jsencrypt');
-const CryptoJS = require("crypto-js");
+
+const {verifyMessage, signMessage} = require('./rsaIntegrityHandler');
 
 function startChatServer(io) {
     const botName = '';
 
     io.on('connection', socket => {
         
-        socket.on('joinstream', ({ username, stream }) => {
-            const user = userJoin(socket.id, username, stream);
+        socket.on('joinstream', (message) => {
+            const verified = verifyMessage(message);
             
-            socket.join(user.stream);
+            if (verified) {
+                const user = userJoin(socket.id, message.message.username, message.message.stream);
+            
+                socket.join(user.stream);
 
-            socket.emit('message', formatMessage(botName, 'Welcome to the chat!'));
+                socket.emit('message', signMessage(formatMessage(botName, 'Welcome to the chat!', true)));
 
-            socket.broadcast
-            .to(user.stream)
-            .emit(
-                'message',
-                formatMessage(botName, `${user.username} has joined the chat`)
-            );
+                socket.broadcast
+                .to(user.stream)
+                .emit(
+                    'message',
+                    signMessage(formatMessage(botName, `${user.username} has joined the chat`, true))
+                );
 
-            io.to(user.stream).emit('streamUsers', {
-                stream: user.stream,
-                users: getStreamUsers(user.stream)
-            });
+                io.to(user.stream).emit('streamUsers', signMessage(getStreamUsers(user.stream)));
+            }
         });
 
         socket.on('chatMessage', msg => {
-            const user = getCurrentUser(socket.id);
-            const verify = new JSEncrypt({default_key_size: 512});
-            verify.setPublicKey("-----BEGIN PUBLIC KEY-----MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDLfU6pzx5ytxZVO4S8SXaW9p0NKp/PTZwVCU//BdeZQNjO88/9Q35qkvP/pJ0O3shI3EKStQPobFDmPqjta50GDFdFA3hzuumj+zUSQumKCznBcAL2qEVXPYYbk25MFePYQXgf6d7yleSGilECUCpfDT13JwxqBkrxEbeebc/4gQIDAQAB-----END PUBLIC KEY-----");
-            const verified = verify.verify(msg.message + msg.timestamp, msg.signature, CryptoJS.SHA256);
-
+            const verified = verifyMessage(msg);
+            
             if (verified) {
-                io.to(user.stream).emit('message', formatMessage(user.username, msg.message));
+                const user = getCurrentUser(socket.id);
+                emitMessage(user, formatMessage(user.username, msg.message, false));
             }
         });
 
@@ -49,18 +47,28 @@ function startChatServer(io) {
             const user = userLeave(socket.id);
 
             if (user) {
-            io.to(user.stream).emit(
-                'message',
-                formatMessage(botName, `${user.username} has left the chat`)
-            );
+                emitMessage(user, formatMessage(botName, `${user.username} has left the chat`, true));
+                io.to(user.stream).emit('streamUsers', signMessage(getStreamUsers(user.stream)));
+            }
+        });
 
-            io.to(user.stream).emit('streamUsers', {
-                stream: user.stream,
-                users: getStreamUsers(user.stream)
-            });
+        socket.on('disconnectUserFromStream', msg => {
+            const verified = verifyMessage(msg);
+
+            if (verified) {
+                const user = userLeave(msg.message);
+
+                if (user) {
+                    emitMessage(user, formatMessage(botName, `${user.username} has left the chat`, true));
+                    io.to(user.stream).emit('streamUsers', signMessage(getStreamUsers(user.stream)));
+                }
             }
         });
     });
+
+    function emitMessage(user, message){
+        io.to(user.stream).emit('message', signMessage(message));
+    }
   }
   
   module.exports = startChatServer;
