@@ -7,6 +7,11 @@ const {
 } = require('./users');
 
 const {verifyMessage, signMessage} = require('./rsaIntegrityHandler');
+const mongo = require('mongodb');
+const MongoClient = mongo.MongoClient;
+const ObjectID = mongo.ObjectID;
+
+const MONGODB_URL = process.env.MONGODB_URL || 'mongodb://localhost:27017';
 
 function startChatServer(io) {
     const botName = '';
@@ -36,10 +41,12 @@ function startChatServer(io) {
 
         socket.on('chatMessage', msg => {
             const verified = verifyMessage(msg);
-            
+
             if (verified) {
                 const user = getCurrentUser(socket.id);
-                emitMessage(user, formatMessage(user.username, msg.message, false));
+                let message = formatMessage(user.username, msg.message, false);
+                emitMessage(user, message);
+                SaveMongoDB(message, user, msg.signature, verified);
             }
         });
 
@@ -70,5 +77,24 @@ function startChatServer(io) {
         io.to(user.stream).emit('message', signMessage(message));
     }
   }
-  
+
+function SaveMongoDB(message, user, signature, verified)
+{
+    MongoClient.connect(MONGODB_URL, { useNewUrlParser: true, useUnifiedTopology: true }, (err, client) => {
+        if (err) throw err;
+
+        const db = client.db("chat_room");
+        let document = {_id: new ObjectID(), message: message.text, user_id: user.id, verified: verified, time: message.timeWithMilliSeconds, stream: user.stream, signature: signature };
+
+        db.collection('chat_history').insertOne(document).then((saveObject) => {
+            console.log('Message inserted')
+            console.log(saveObject);
+        }).catch((err) => {
+            console.log(err);
+        }).finally(() => {
+            //client.close();
+        });
+    });
+}
+
   module.exports = startChatServer;

@@ -12,6 +12,7 @@
     "express": "^4.17.1",
     "jsencrypt": "^3.2.0",
     "moment": "^2.24.0",
+    "mongoose": "^5.12.14",
     "sjcl": "^1.0.8",
     "socket.io": "^2.4.0"
   },
