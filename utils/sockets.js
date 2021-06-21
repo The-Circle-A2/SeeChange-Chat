@@ -17,37 +17,37 @@ function startChatServer(io) {
     const botName = '';
 
     io.on('connection', socket => {
-        
+
         socket.on('joinstream', (message) => {
-            const verified = verifyMessage(message);
-            
-            if (verified) {
-                const user = userJoin(socket.id, message.message.username, message.message.stream);
-            
-                socket.join(user.stream);
+            verifyMessage(message, message.username)
+                .then(() => {
+                    const user = userJoin(socket.id, message.username, message.stream);
 
-                socket.emit('message', signMessage(formatMessage(botName, 'Welcome to the chat!', true)));
+                    socket.join(user.stream);
 
-                socket.broadcast
-                .to(user.stream)
-                .emit(
-                    'message',
-                    signMessage(formatMessage(botName, `${user.username} has joined the chat`, true))
-                );
+                    socket.emit('message', signMessage(formatMessage(botName, 'Welcome to the chat!', true)));
 
-                io.to(user.stream).emit('streamUsers', signMessage(getStreamUsers(user.stream)));
-            }
+                    socket.broadcast
+                    .to(user.stream)
+                    .emit(
+                        'message',
+                        signMessage(formatMessage(botName, `${user.username} has joined the chat`, true))
+                    );
+
+                    io.to(user.stream).emit('streamUsers', signMessage(getStreamUsers(user.stream)));
+                })
+                .catch(() => {
+                    //
+                });
         });
 
         socket.on('chatMessage', msg => {
-            const verified = verifyMessage(msg);
-
-            if (verified) {
-                const user = getCurrentUser(socket.id);
-                let message = formatMessage(user.username, msg.message, false);
-                emitMessage(user, message);
-                SaveMongoDB(message, user, msg.signature, verified);
-            }
+            verifyMessage(msg)
+                .then(() => {
+                    const user = getCurrentUser(socket.id);
+                    emitMessage(user, formatMessage(user.username, msg.message, false));
+                    SaveMongoDB(message, user, msg.signature, verified);
+                });
         });
 
         socket.on('disconnect', () => {
@@ -60,16 +60,15 @@ function startChatServer(io) {
         });
 
         socket.on('disconnectUserFromStream', msg => {
-            const verified = verifyMessage(msg);
+            verifyMessage(msg)
+                .then(() => {
+                    const user = userLeave(msg.message);
 
-            if (verified) {
-                const user = userLeave(msg.message);
-
-                if (user) {
-                    emitMessage(user, formatMessage(botName, `${user.username} has left the chat`, true));
-                    io.to(user.stream).emit('streamUsers', signMessage(getStreamUsers(user.stream)));
-                }
-            }
+                    if (user) {
+                        emitMessage(user, formatMessage(botName, `${user.username} has left the chat`, true));
+                        io.to(user.stream).emit('streamUsers', signMessage(getStreamUsers(user.stream)));
+                    }
+                });
         });
     });
 
