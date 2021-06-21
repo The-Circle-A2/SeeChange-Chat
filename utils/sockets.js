@@ -12,13 +12,13 @@ function startChatServer(io) {
     const botName = '';
 
     io.on('connection', socket => {
-        
+
         socket.on('joinstream', (message) => {
-            const verified = verifyMessage(message);
-            
-            if (verified) {
-                const user = userJoin(socket.id, message.message.username, message.message.stream);
-            
+            const verified = verifyMessage(message, message.username);
+
+            if (verified) {x
+                const user = userJoin(socket.id, message.username, message.stream);
+
                 socket.join(user.stream);
 
                 socket.emit('message', signMessage(formatMessage(botName, 'Welcome to the chat!', true)));
@@ -36,7 +36,7 @@ function startChatServer(io) {
 
         socket.on('chatMessage', msg => {
             const verified = verifyMessage(msg);
-            
+
             if (verified) {
                 const user = getCurrentUser(socket.id);
                 emitMessage(user, formatMessage(user.username, msg.message, false));
@@ -70,5 +70,5 @@ function startChatServer(io) {
         io.to(user.stream).emit('message', signMessage(message));
     }
   }
-  
+
   module.exports = startChatServer;

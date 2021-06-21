@@ -1,13 +1,27 @@
 global.window = {};
 const JSEncrypt = require('JSEncrypt/bin/jsencrypt');
 const CryptoJS = require("crypto-js");
+const axios = require('axios');
 
-function verifyMessage(msg){
+await function verifyMessage(msg, username){
     const verify = new JSEncrypt({default_key_size: 512});
-    verify.setPublicKey("-----BEGIN PUBLIC KEY-----MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDLfU6pzx5ytxZVO4S8SXaW9p0NKp/PTZwVCU//BdeZQNjO88/9Q35qkvP/pJ0O3shI3EKStQPobFDmPqjta50GDFdFA3hzuumj+zUSQumKCznBcAL2qEVXPYYbk25MFePYQXgf6d7yleSGilECUCpfDT13JwxqBkrxEbeebc/4gQIDAQAB-----END PUBLIC KEY-----");
-    const verified = verify.verify(msg.message + msg.timestamp, msg.signature, CryptoJS.SHA256);
 
-    return verified
+    axios.get('http://truyou.the-circle.designone.nl/user/' + username)
+        .then((response) => {
+            if(response.error) {
+                // log signature invalid
+            }
+
+            if(response.public_key) {// username exists
+                verify.setPublicKey(response.public_key);
+
+                const verified = verify.verify(msg.message + msg.timestamp, msg.signature, CryptoJS.SHA256);
+
+                return verified
+            }
+
+            // uncaught error?
+        });
 }
 
 function signMessage(msg){
