@@ -3,25 +3,27 @@ const JSEncrypt = require('JSEncrypt/bin/jsencrypt');
 const CryptoJS = require("crypto-js");
 const axios = require('axios');
 
-await function verifyMessage(msg, username){
+function verifyMessage(msg, username){
     const verify = new JSEncrypt({default_key_size: 512});
 
-    axios.get('http://truyou.the-circle.designone.nl/user/' + username)
-        .then((response) => {
-            if(response.error) {
-                // log signature invalid
-            }
+    return new Promise((resolve, reject) => {
+        axios.get('http://truyou.the-circle.designone.nl/user/' + username)
+            .then((response) => {
+                if (response.error) {
+                    // log signature invalid
+                }
 
-            if(response.public_key) {// username exists
-                verify.setPublicKey(response.public_key);
+                if (response.public_key) {// username exists
+                    verify.setPublicKey(response.public_key);
 
-                const verified = verify.verify(msg.message + msg.timestamp, msg.signature, CryptoJS.SHA256);
+                    if(verify.verify(msg.message + msg.timestamp, msg.signature, CryptoJS.SHA256)) {
+                        return resolve();
+                    }
+                }
 
-                return verified
-            }
-
-            // uncaught error?
-        });
+                return reject();
+            });
+    });
 }
 
 function signMessage(msg){

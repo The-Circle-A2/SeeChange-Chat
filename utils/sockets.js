@@ -14,33 +14,34 @@ function startChatServer(io) {
     io.on('connection', socket => {
 
         socket.on('joinstream', (message) => {
-            const verified = verifyMessage(message, message.username);
+            verifyMessage(message, message.username)
+                .then(() => {
+                    const user = userJoin(socket.id, message.username, message.stream);
 
-            if (verified) {x
-                const user = userJoin(socket.id, message.username, message.stream);
+                    socket.join(user.stream);
 
-                socket.join(user.stream);
+                    socket.emit('message', signMessage(formatMessage(botName, 'Welcome to the chat!', true)));
 
-                socket.emit('message', signMessage(formatMessage(botName, 'Welcome to the chat!', true)));
+                    socket.broadcast
+                    .to(user.stream)
+                    .emit(
+                        'message',
+                        signMessage(formatMessage(botName, `${user.username} has joined the chat`, true))
+                    );
 
-                socket.broadcast
-                .to(user.stream)
-                .emit(
-                    'message',
-                    signMessage(formatMessage(botName, `${user.username} has joined the chat`, true))
-                );
-
-                io.to(user.stream).emit('streamUsers', signMessage(getStreamUsers(user.stream)));
-            }
+                    io.to(user.stream).emit('streamUsers', signMessage(getStreamUsers(user.stream)));
+                })
+                .catch(() => {
+                    //
+                });
         });
 
         socket.on('chatMessage', msg => {
-            const verified = verifyMessage(msg);
-
-            if (verified) {
-                const user = getCurrentUser(socket.id);
-                emitMessage(user, formatMessage(user.username, msg.message, false));
-            }
+            verifyMessage(msg)
+                .then(() => {
+                    const user = getCurrentUser(socket.id);
+                    emitMessage(user, formatMessage(user.username, msg.message, false));
+                });
         });
 
         socket.on('disconnect', () => {
@@ -53,16 +54,15 @@ function startChatServer(io) {
         });
 
         socket.on('disconnectUserFromStream', msg => {
-            const verified = verifyMessage(msg);
+            verifyMessage(msg)
+                .then(() => {
+                    const user = userLeave(msg.message);
 
-            if (verified) {
-                const user = userLeave(msg.message);
-
-                if (user) {
-                    emitMessage(user, formatMessage(botName, `${user.username} has left the chat`, true));
-                    io.to(user.stream).emit('streamUsers', signMessage(getStreamUsers(user.stream)));
-                }
-            }
+                    if (user) {
+                        emitMessage(user, formatMessage(botName, `${user.username} has left the chat`, true));
+                        io.to(user.stream).emit('streamUsers', signMessage(getStreamUsers(user.stream)));
+                    }
+                });
         });
     });
 
