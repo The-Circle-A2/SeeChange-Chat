@@ -14,7 +14,7 @@ const io = socketio(server, {
 });
 
 dotenv.config();
-io.set('origins', process.env.CLIENT_URL);
+//io.set('origins', process.env.CLIENT_URL);
 
 startChatServer(io);
 
