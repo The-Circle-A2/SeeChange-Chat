@@ -3,11 +3,12 @@ const http = require('http');
 const express = require('express');
 const socketio = require('socket.io');
 const startChatServer = require('./utils/sockets');
-
+const dotenv = require('dotenv');
 const app = express();
 const server = http.createServer(app);
 const io = socketio(server);
-io.set('origins', 'http://localhost:8080');
+dotenv.config();
+io.set('origins', process.env.CLIENT_URL);
 
 startChatServer(io);
 
