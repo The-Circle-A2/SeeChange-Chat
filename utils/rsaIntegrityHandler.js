@@ -2,18 +2,34 @@ global.window = {};
 const JSEncrypt = require('JSEncrypt/bin/jsencrypt');
 const CryptoJS = require("crypto-js");
 const axios = require('axios');
+const {logError} = require('./logmanager');
+let lastUpdate;
+let userMap = new Map();
 
 function verifyMessage(msg, username){
     const verify = new JSEncrypt({default_key_size: 512});
 
+    if (Date.now() - lastUpdate > 900000) {
+        userMap.clear();
+    }
+
     return new Promise((resolve, reject) => {
-        axios.get('http://truyou.the-circle.designone.nl/user/' + username)
+        if (userMap.has(username)){
+            verify.setPublicKey(userMap.get(username));
+    
+            if(verify.verify(msg.message + msg.timestamp, msg.signature, CryptoJS.SHA256)) {
+                return resolve();
+            }
+        } else {
+            axios.get('http://truyou.the-circle.designone.nl/user/' + username)
             .then((response) => {
                 if (response.error) {
-                    // log signature invalid
+                    logError(signMessage(response.error));
                 }
 
                 if (response.data.public_key) {// username exists
+                    userMap.set(username, response.data.public_key);
+                    lastUpdate = Date.now();
                     verify.setPublicKey(response.data.public_key);
 
                     if(verify.verify(msg.message + msg.timestamp, msg.signature, CryptoJS.SHA256)) {
@@ -23,6 +39,7 @@ function verifyMessage(msg, username){
 
                 return reject();
             });
+        }
     });
 }
 

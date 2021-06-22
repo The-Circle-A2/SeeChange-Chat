@@ -5,7 +5,7 @@ const {
   userLeave,
   getStreamUsers
 } = require('./users');
-
+const {logError} = require('./logmanager');
 const {verifyMessage, signMessage} = require('./rsaIntegrityHandler');
 const mongo = require('mongodb');
 const MongoClient = mongo.MongoClient;
@@ -32,6 +32,7 @@ function startChatServer(io) {
                         'message',
                         signMessage(formatMessage(botName, `${user.username} has joined the chat`, user.stream, true))
                     );
+                    logError(signMessage(`${user.username} has joined the chat`));
 
                     io.to(user.stream).emit('streamUsers', signMessage(getStreamUsers(user.stream)));
                 })
@@ -45,7 +46,7 @@ function startChatServer(io) {
                 .then(() => {
                     const user = getCurrentUser(socket.id);
                     emitMessage(user, formatMessage(user.username, msg.message, user.stream, false));
-                    SaveMongoDB(msg.message, user, msg.signature, true);
+                    SaveMongoDB(msg, user, msg.signature, true);
                 });
         });
 
@@ -54,6 +55,7 @@ function startChatServer(io) {
 
             if (user) {
                 emitMessage(user, formatMessage(botName, `${user.username} has left the chat`, user.stream, true));
+                logError(signMessage(`${user.username} has left the chat`));
                 io.to(user.stream).emit('streamUsers', signMessage(getStreamUsers(user.stream)));
             }
         });
@@ -65,6 +67,7 @@ function startChatServer(io) {
 
                     if (user) {
                         emitMessage(user, formatMessage(botName, `${user.username} has left the chat`, user.stream, true));
+                        logError(signMessage(`${user.username} has left the chat`));
                         io.to(user.stream).emit('streamUsers', signMessage(getStreamUsers(user.stream)));
                     }
                 });
@@ -80,11 +83,9 @@ function startChatServer(io) {
             if (err) throw err;
 
                 const db = client.db("chat_room");
-                let document = {_id: new ObjectID(), message: message.text, user_id: user.id, verified: verified, time: message.timeWithMilliSeconds, stream: user.stream, signature: signature };
+                let document = {_id: new ObjectID(), message: message.message, user_id: user.id, verified: verified, time: message.timestamp, stream: user.stream, signature: signature };
 
                 db.collection('chat_history').insertOne(document).then((saveObject) => {
-                console.log('Message inserted')
-                console.log(saveObject);
             }).catch((err) => {
                 console.log(err);
             }).finally(() => {
