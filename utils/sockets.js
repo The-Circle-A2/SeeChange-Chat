@@ -79,7 +79,6 @@ function startChatServer(io) {
     }
 
     function SaveMongoDB(message, user, signature, verified){
-        console.log(message);
         MongoClient.connect(MONGODB_URL, { useNewUrlParser: true, useUnifiedTopology: true }, (err, client) => {
             if (err) throw err;
 
