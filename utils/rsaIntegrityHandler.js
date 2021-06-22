@@ -1,5 +1,5 @@
 global.window = {};
-const JSEncrypt = require('JSEncrypt/bin/jsencrypt');
+const JSEncrypt = require('jsencrypt')
 const CryptoJS = require("crypto-js");
 const axios = require('axios');
 const {logError} = require('./logmanager');
@@ -16,7 +16,7 @@ function verifyMessage(msg, username){
     return new Promise((resolve, reject) => {
         if (userMap.has(username)){
             verify.setPublicKey(userMap.get(username));
-    
+
             if(verify.verify(msg.message + msg.timestamp, msg.signature, CryptoJS.SHA256)) {
                 return resolve();
             }
