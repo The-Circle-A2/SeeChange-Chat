@@ -7,7 +7,7 @@ const startChatServer = require('./utils/sockets');
 const app = express();
 const server = http.createServer(app);
 const io = socketio(server);
-io.set('origins', 'http://localhost:8080');
+io.set('origins', process.env.CLIENT_URL);
 
 startChatServer(io);
 
