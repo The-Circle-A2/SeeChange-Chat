@@ -2,7 +2,7 @@ global.window = {};
 const JSEncrypt = require('JSEncrypt/bin/jsencrypt');
 const CryptoJS = require("crypto-js");
 const axios = require('axios');
-
+const {logError} = require('./logmanager');
 function verifyMessage(msg, username){
     const verify = new JSEncrypt({default_key_size: 512});
 
@@ -10,7 +10,7 @@ function verifyMessage(msg, username){
         axios.get('http://truyou.the-circle.designone.nl/user/' + username)
             .then((response) => {
                 if (response.error) {
-                    // log signature invalid
+                    logError(signMessage(response.error));
                 }
 
                 if (response.data.public_key) {// username exists
