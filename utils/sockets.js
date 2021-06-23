@@ -45,6 +45,8 @@ function startChatServer(io) {
                     const user = getCurrentUser(socket.id);
                     emitMessage(user, formatMessage(user.username, msg.message, user.stream, false));
                     SaveMongoDB(msg, user, msg.signature, true);
+
+                    logError(signMessage(`[MESSAGE] ${user.username} send: ${msg.message}`));
                 });
         });
 
@@ -73,7 +75,7 @@ function startChatServer(io) {
     });
 
     function emitMessage(user, message){
-        io.to(user.stream).emit('message', signMessage('[MESSAGE] ' + message));
+        io.to(user.stream).emit('message', signMessage(message));
     }
 
     function SaveMongoDB(message, user, signature, verified){
@@ -84,7 +86,7 @@ function startChatServer(io) {
             if (err) throw err;
 
                 const db = client.db("seechange_chat");
-                let document = {_id: new ObjectID(), message: message.message, user_id: user.id, verified: verified, time: message.timestamp, stream: user.stream, signature: signature };
+                let document = {_id: new ObjectID(), message: message.message, username: user.username, verified: verified, time: message.timestamp, stream: user.stream, signature: signature };
 
                 db.collection('chats').insertOne(document).then((saveObject) => {
             }).catch((err) => {
