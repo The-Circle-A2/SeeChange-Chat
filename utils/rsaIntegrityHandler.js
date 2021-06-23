@@ -23,9 +23,6 @@ function verifyMessage(msg, username){
         } else {
             axios.get('http://truyou.the-circle.designone.nl/user/' + username)
             .then((response) => {
-                if (response.error) {
-                    logError(signMessage(response.error));
-                }
 
                 if (response.data.public_key) {// username exists
                     userMap.set(username, response.data.public_key);
@@ -36,6 +33,8 @@ function verifyMessage(msg, username){
                         return resolve();
                     }
                 }
+
+                logError(signMessage('[SYSTEM] Invalid signature received from ' + username));
 
                 return reject();
             });

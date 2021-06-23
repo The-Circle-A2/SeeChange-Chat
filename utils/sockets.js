@@ -11,8 +11,6 @@ const mongo = require('mongodb');
 const MongoClient = mongo.MongoClient;
 const ObjectID = mongo.ObjectID;
 
-const MONGODB_URL = process.env.MONGODB_URL || 'mongodb://localhost:27017';
-
 function startChatServer(io) {
     const botName = '';
 
@@ -32,7 +30,7 @@ function startChatServer(io) {
                         'message',
                         signMessage(formatMessage(botName, `${user.username} has joined the chat`, user.stream, true))
                     );
-                    logError(signMessage(`${user.username} has joined the chat`));
+                    logError(signMessage(`[SYSTEM] ${user.username} has joined the chat`));
 
                     io.to(user.stream).emit('streamUsers', signMessage(getStreamUsers(user.stream)));
                 })
@@ -55,7 +53,7 @@ function startChatServer(io) {
 
             if (user) {
                 emitMessage(user, formatMessage(botName, `${user.username} has left the chat`, user.stream, true));
-                logError(signMessage(`${user.username} has left the chat`));
+                logError(signMessage(`[SYSTEM] ${user.username} has left the chat`));
                 io.to(user.stream).emit('streamUsers', signMessage(getStreamUsers(user.stream)));
             }
         });
@@ -67,7 +65,7 @@ function startChatServer(io) {
 
                     if (user) {
                         emitMessage(user, formatMessage(botName, `${user.username} has left the chat`, user.stream, true));
-                        logError(signMessage(`${user.username} has left the chat`));
+                        logError(signMessage(`[SYSTEM] ${user.username} has left the chat`));
                         io.to(user.stream).emit('streamUsers', signMessage(getStreamUsers(user.stream)));
                     }
                 });
@@ -75,20 +73,25 @@ function startChatServer(io) {
     });
 
     function emitMessage(user, message){
-        io.to(user.stream).emit('message', signMessage(message));
+        io.to(user.stream).emit('message', signMessage('[MESSAGE] ' + message));
     }
 
     function SaveMongoDB(message, user, signature, verified){
-        MongoClient.connect(MONGODB_URL, { useNewUrlParser: true, useUnifiedTopology: true }, (err, client) => {
+        console.log(message);
+
+        //, { useNewUrlParser: true, useUnifiedTopology: true }
+        MongoClient.connect(process.env.MONGODB_URL, (err, client) => {
             if (err) throw err;
 
-                const db = client.db("chat_room");
+                const db = client.db("seechange_chat");
                 let document = {_id: new ObjectID(), message: message.message, user_id: user.id, verified: verified, time: message.timestamp, stream: user.stream, signature: signature };
 
-                db.collection('chat_history').insertOne(document).then((saveObject) => {
+                db.collection('chats').insertOne(document).then((saveObject) => {
             }).catch((err) => {
-                console.log(err);
+                // console.log(err);
+                console.log('chat save error');
             }).finally(() => {
+                console.log('chat save done');
                 //client.close();
             });
         });
