@@ -24,13 +24,21 @@ function verifyMessage(msg, username){
             axios.get('http://truyou.the-circle.designone.nl/user/' + username)
             .then((response) => {
 
-                if (response.data.public_key) {// username exists
-                    userMap.set(username, response.data.public_key);
-                    lastUpdate = Date.now();
-                    verify.setPublicKey(response.data.public_key);
+                /*
+                Verify TruYou signature: Bart
+                 */
+                const verify = new JSEncrypt({default_key_size: 512});
+                verify.setPublicKey(process.env.PUBLIC_KEY);
+                if(verify.verify(response.body + response.headers['X-timestamp'], response.headers['X-signature'], CryptoJS.SHA256)) {
 
-                    if(verify.verify(msg.message + msg.timestamp, msg.signature, CryptoJS.SHA256)) {
-                        return resolve();
+                    if (response.data.public_key) {// username exists
+                        userMap.set(username, response.data.public_key);
+                        lastUpdate = Date.now();
+                        verify.setPublicKey(response.data.public_key);
+
+                        if (verify.verify(msg.message + msg.timestamp, msg.signature, CryptoJS.SHA256)) {
+                            return resolve();
+                        }
                     }
                 }
 
