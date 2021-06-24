@@ -106,8 +106,6 @@ function signMessage(msg) {
   const timestamp = Date.now();
   const signature = sign.sign(msg + timestamp, CryptoJS.SHA256, "sha256");
 
-  console.log(signature);
-
   const messageWithSig = {
     message: msg,
     signature: signature,
