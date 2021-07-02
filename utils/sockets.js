@@ -44,7 +44,7 @@ function startChatServer(io) {
                 .then(() => {
                     const user = getCurrentUser(socket.id);
                     emitMessage(user, formatMessage(user.username, msg.message, user.stream, false));
-                    SaveMongoDB(msg, user, msg.signature, true);
+                    //SaveMongoDB(msg, user, msg.signature, true);
 
                     logError(signMessage(`[MESSAGE] ${user.username} send: ${msg.message}`));
                 });

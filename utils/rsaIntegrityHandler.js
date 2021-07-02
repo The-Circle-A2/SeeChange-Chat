@@ -13,7 +13,10 @@ function verifyMessage(msg, username){
         userMap.clear();
     }
 
+    //userMap.set("j.jansen", "-----BEGIN PUBLIC KEY-----MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyYCtUTlrCDjKJ2HrDpe2CzotqZw5imLe6BdDmgniGuuLVYxG3Y40lcCSDfuUZXcaf53YgYZ08/j3tbU1yslkoW0KdGx0Sf4MC6VCKFVyGHSp6JRiwhjHI+PBzxlQTqBDQC+WPHpRDLAxKS1lBrO2AQ/CO9uSGABZy5IGgsIEoTd1W9BYpAdn7o3olke45qVXr56UsHN+o9e3mSo2b5g2qjVjfUmItYMru+zPgfk9rqcmzNbff5wUwKvfjc8Rr9jOxoy1bi9PGlScwejABWff3dfFt16piFwECQWN2bdaKXsdC06dbua5JTV+/Ohko338Fzeu3Xg5qGMt84KecRrwmwIDAQAB-----END PUBLIC KEY-----");
     return new Promise((resolve, reject) => {
+        //let username = "j.jansen";
+
         if (userMap.has(username)){
             verify.setPublicKey(userMap.get(username));
 
@@ -21,9 +24,8 @@ function verifyMessage(msg, username){
                 return resolve();
             }
         } else {
-            axios.get('http://truyou.the-circle.designone.nl/user/' + username)
+            axios.get('http://127.0.0.1:8000/user/' + username)
             .then((response) => {
-
                 /*
                 Verify TruYou signature: Bart
                  */
