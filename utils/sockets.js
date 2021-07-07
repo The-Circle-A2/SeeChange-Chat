@@ -74,7 +74,8 @@ function startChatServer(io) {
         });
     });
 
-    function emitMessage(user, message){
+    function emitMessage(user, message)
+    {
         io.to(user.stream).emit('message', signMessage(message));
     }
 
