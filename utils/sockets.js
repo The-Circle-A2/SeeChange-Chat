@@ -16,9 +16,10 @@ function startChatServer(io) {
 
     io.on('connection', socket => {
 
-        socket.on('joinstream', (message) => {
+        socket.on('joinStream', (message) => {
             verifyMessage(message, message.username)
                 .then(() => {
+                    console.log("Join stream key: " + message.stream);
                     const user = userJoin(socket.id, message.username, message.stream);
                     socket.join(user.stream);
 
